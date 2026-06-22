@@ -13,7 +13,7 @@ except ImportError:
     HAS_CHINESE_CALENDAR = False
 
 import akshare as ak
-import anthropic
+from openai import OpenAI
 
 
 def is_trading_day(d: date) -> bool:
@@ -230,7 +230,10 @@ def push_wechat(title: str, content: str) -> None:
 
 
 def generate_review(data: dict, target_date: date) -> str:
-    client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
+    client = OpenAI(
+        api_key=os.environ['DOUBAO_API_KEY'],
+        base_url='https://ark.cn-beijing.volces.com/api/v3',
+    )
     month_day = f"{target_date.month}.{target_date.day}"
     data_text = build_data_text(data)
 
@@ -293,13 +296,15 @@ def generate_review(data: dict, target_date: date) -> str:
 6. 对于前日成交额（用于放量/缩量判断），若无数据可合理估算
 """
 
-    message = client.messages.create(
-        model="claude-opus-4-8",
+    response = client.chat.completions.create(
+        model='doubao-seed-2-0-pro-260215',
         max_tokens=5000,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
     )
-    return message.content[0].text.strip()
+    return response.choices[0].message.content.strip()
 
 
 def main():
