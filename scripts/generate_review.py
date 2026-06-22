@@ -78,7 +78,8 @@ def get_market_activity() -> dict:
 
 
 def get_sector_flow() -> list:
-    for func_name in ['stock_board_industry_fund_flow_rank', 'stock_sector_fund_flow_rank']:
+    """获取东方财富概念板块资金流向，取主力净流入前10"""
+    for func_name in ['stock_board_concept_fund_flow_rank', 'stock_board_industry_fund_flow_rank']:
         func = getattr(ak, func_name, None)
         if func is None:
             continue
@@ -92,12 +93,13 @@ def get_sector_flow() -> list:
             if flow_col:
                 df = df.sort_values(flow_col, ascending=False)
             sectors = []
-            for _, row in df.head(6).iterrows():
+            for _, row in df.head(10).iterrows():
                 sectors.append({
                     'name': str(row[name_col]),
                     'change_pct': float(row[change_col]) if change_col else 0,
                     'main_flow_wan': float(row[flow_col]) if flow_col else 0,
                 })
+            print(f"板块数据来源: {func_name}，前5板块: {[s['name'] for s in sectors[:5]]}")
             return sectors
         except Exception as e:
             print(f"[警告] {func_name} 失败: {e}")
@@ -289,11 +291,12 @@ def generate_review(data: dict, target_date: date) -> str:
 
 【注意事项】
 1. 指数涨跌幅、收盘点位、涨跌家数、涨跌停数必须使用上方提供的真实数据
-2. 主线板块选主力净流入最高的2-4个行业
-3. 情绪龙头和中军龙头从个股资金流数据中选取，优先选涨幅大、成交额高的龙头
-4. 换手率、总市值等可合理估算，但涨跌幅必须与数据一致
-5. 不要编造不存在的股票代码或名称
-6. 对于前日成交额（用于放量/缩量判断），若无数据可合理估算
+2. 主线板块必须直接使用上方"行业板块资金流向"数据中的原始板块名称（如：小金属板块、工业金属板块、电网设备板块），禁止自己合并或重命名（不能写"大金融板块"、"科技板块"这种自造的聚合名称）
+3. 选主力净流入排名前2-4的板块作为主线
+4. 情绪龙头和中军龙头从个股资金流数据中选取，优先选涨幅大、成交额高的龙头
+5. 换手率、总市值等可合理估算，但涨跌幅必须与数据一致
+6. 不要编造不存在的股票代码或名称
+7. 对于前日成交额（用于放量/缩量判断），若无数据可合理估算
 """
 
     response = client.chat.completions.create(
