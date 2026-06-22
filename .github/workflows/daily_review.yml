@@ -32,6 +32,7 @@ jobs:
       - name: 生成复盘
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SERVERCHAN_KEY: ${{ secrets.SERVERCHAN_KEY }}
           REVIEW_DATE: ${{ github.event.inputs.date }}
         run: python scripts/generate_review.py
 

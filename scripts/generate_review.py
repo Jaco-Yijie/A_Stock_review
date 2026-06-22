@@ -211,6 +211,24 @@ def build_data_text(data: dict) -> str:
     return '\n'.join(lines)
 
 
+def push_wechat(title: str, content: str) -> None:
+    sendkey = os.environ.get('SERVERCHAN_KEY', '').strip()
+    if not sendkey:
+        print("[跳过] 未配置 SERVERCHAN_KEY，跳过微信推送")
+        return
+    import requests
+    resp = requests.post(
+        f"https://sctapi.ftqq.com/{sendkey}.send",
+        data={'title': title, 'desp': content},
+        timeout=15,
+    )
+    result = resp.json()
+    if result.get('code') == 0:
+        print("微信推送成功")
+    else:
+        print(f"[警告] 微信推送失败: {result}")
+
+
 def generate_review(data: dict, target_date: date) -> str:
     client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
     month_day = f"{target_date.month}.{target_date.day}"
@@ -337,6 +355,9 @@ def main():
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(content, encoding='utf-8')
     print(f"复盘已生成: {output_path}")
+
+    month_day = f"{target_date.month}.{target_date.day}"
+    push_wechat(f"{month_day} A股复盘", content)
 
 
 if __name__ == '__main__':
